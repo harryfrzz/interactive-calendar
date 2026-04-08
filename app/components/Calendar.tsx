@@ -12,10 +12,10 @@ import {
   MotionValue,
   useMotionValueEvent
 } from "framer-motion";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MoveUpRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, GripVertical, X } from "lucide-react";
 import { StickyNote } from "./StickyNote";
+
 import { DateRangeSummary } from "./DateRangeSummary";
-// import { WeatherOverlay } from "./weather/WeatherOverlay";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -118,14 +118,9 @@ function PageContent({ pageDate, today, startDate, endDate, onSelectDay, onDoubl
         )}
         <div className="absolute inset-0 bg-[#FF9B9B]/20 mix-blend-color z-[5]" /> {/* Subtle tint */}
 
-        {/* Dynamic Weather Overlay (temporarily removed) */}
-        {/* <div className="absolute inset-0 z-20 pointer-events-none">
-          <WeatherOverlay month={pageDate.getMonth()} />
-        </div> */}
-
         <div className="absolute bottom-6 left-8 text-black drop-shadow-[2px_2px_0_white] z-30">
-          <h2 className="text-4xl sm:text-5xl font-black uppercase tracking-tight mb-1">{monthName}</h2>
-          <p className="text-sm font-bold tracking-[0.2em] opacity-90 uppercase">{pageDate.getFullYear()}</p>
+          <h2 className={`text-4xl sm:text-5xl font-sora font-bold uppercase tracking-[-4px] mb-1`}>{monthName}</h2>
+          <p className={`text-sm font-sora font-extrabold tracking-[0.2em] opacity-90 uppercase`}>{pageDate.getFullYear()}</p>
         </div>
       </div>
 
@@ -391,9 +386,9 @@ function PhysicsPage({
           note={note} onNoteChange={onNoteChange}
         />
 
-        <div className="absolute bottom-0 right-0 w-24 h-24 pointer-events-none overflow-hidden">
-          <div className="absolute bottom-[-10px] right-[-10px] w-full h-full bg-black/10 rounded-[20%_0_0_20%] opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform group-hover:-translate-x-1 group-hover:-translate-y-1" />
-          <MoveUpRight className="absolute bottom-4 right-4 w-6 h-6 text-black opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0 drop-shadow-[1px_1px_0_white]" />
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none flex items-center gap-1.5">
+          <GripVertical className="w-4 h-4 text-black/50" />
+          <span className="text-[9px] font-black text-black/50 uppercase tracking-wider">Pull to flip</span>
         </div>
       </div>
 
