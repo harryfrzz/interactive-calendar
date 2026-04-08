@@ -12,7 +12,9 @@ import {
   MotionValue,
   useMotionValueEvent
 } from "framer-motion";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MoveUpRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MoveUpRight, Settings, X } from "lucide-react";
+import { StickyNote } from "./StickyNote";
+import { WeatherOverlay } from "./weather/WeatherOverlay";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -41,38 +43,78 @@ function buildMonthGrid(year: number, month: number) {
   return slots;
 }
 
+const HERO_IMAGES: string[] = [];
+
+function getImageForMonth(monthIndex: number) {
+  if (HERO_IMAGES.length === 0) return "";
+  return HERO_IMAGES[monthIndex % HERO_IMAGES.length];
+}
+
 interface PageContentProps {
   pageDate: Date;
   today: Date;
   startDate: Date | null;
   endDate: Date | null;
   onSelectDay?: (day: number) => void;
+  onDoubleClickDay?: (date: Date) => void;
+  events?: Record<string, { id: string; title: string }[]>;
   interactive?: boolean;
+  note?: string;
+  onNoteChange?: (note: string) => void;
 }
 
-function PageContent({ pageDate, today, startDate, endDate, onSelectDay, interactive = true }: PageContentProps) {
+function getEventKey(date: Date) {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function PageContent({ pageDate, today, startDate, endDate, onSelectDay, onDoubleClickDay, events, interactive = true, note, onNoteChange }: PageContentProps) {
   const slots = buildMonthGrid(pageDate.getFullYear(), pageDate.getMonth());
   const monthName = pageDate.toLocaleDateString("en-US", { month: "long" });
 
   return (
-    <div className="w-full h-full flex flex-col pointer-events-none">
-      <div className="absolute top-3 left-0 w-full flex justify-evenly px-8 z-20 pointer-events-none">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={`hole-${i}`} className="w-3.5 h-3.5 bg-zinc-800/10 rounded-full shadow-[inset_0_2px_5px_rgba(0,0,0,0.3)]" />
+    <div className="w-full h-full flex flex-col pointer-events-none relative">
+      {/* Realistic Wire-O Binding (Front) - Holes Only */}
+      <div className="absolute top-0 left-0 w-full flex justify-evenly px-10 z-[60] pointer-events-none">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={`hole-group-${i}`} className="relative flex justify-center items-start w-10 h-12">
+            {/* The Transparent Hole (Knockout) */}
+            <div className="absolute top-5 w-[14px] h-[14px] bg-black rounded-full mix-blend-destination-out" />
+            {/* Inner Shadow / Outline Overlay */}
+            <div className="absolute top-5 w-[14px] h-[14px] rounded-full border-[1.5px] border-black/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_1px_rgba(255,255,255,0.8)] pointer-events-none" />
+          </div>
         ))}
       </div>
 
-      <div className="h-48 sm:h-65 w-full relative shrink-0 bg-zinc-200 flex items-center justify-center">
-        <span className="text-zinc-400 font-medium text-lg uppercase tracking-widest">Placeholder</span>
-        <div className="absolute inset-0 from-black/80 via-black/20" />
-        <div className="absolute bottom-4 left-6 text-[#faf9f6] drop-shadow-md">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">{monthName}</h2>
-          <p className="text-lg font-medium opacity-90">{pageDate.getFullYear()}</p>
+      <StickyNote note={note} onNoteChange={onNoteChange} interactive={interactive} />
+
+      <div className="h-48 sm:h-65 w-full relative shrink-0 bg-[#FF9B9B] border-b-2 border-black flex items-center justify-center overflow-hidden">
+        {/* Halftone/manga dot pattern overlay */}
+        <div className="absolute inset-0 opacity-20 mix-blend-overlay bg-[radial-gradient(circle,black_1px,transparent_1px)] z-10 pointer-events-none" style={{ backgroundSize: "8px 8px" }} />
+        
+        {/* Hero Image */}
+        {getImageForMonth(pageDate.getMonth()) && (
+          <img 
+            src={getImageForMonth(pageDate.getMonth())} 
+            alt={monthName}
+            className="absolute inset-0 w-full h-full object-cover filter contrast-[1.1] saturate-[1.2]"
+            draggable={false}
+          />
+        )}
+        <div className="absolute inset-0 bg-[#FF9B9B]/20 mix-blend-color z-[5]" /> {/* Subtle tint */}
+
+        {/* Dynamic Weather Overlay */}
+        <div className="absolute inset-0 z-20 pointer-events-none">
+          <WeatherOverlay month={pageDate.getMonth()} />
+        </div>
+
+        <div className="absolute bottom-6 left-8 text-black drop-shadow-[2px_2px_0_white] z-30">
+          <h2 className="text-4xl sm:text-5xl font-black uppercase tracking-tight mb-1">{monthName}</h2>
+          <p className="text-sm font-bold tracking-[0.2em] opacity-90 uppercase">{pageDate.getFullYear()}</p>
         </div>
       </div>
 
-      <div className="flex-1 px-6 py-4 flex flex-col pointer-events-auto bg-[#faf9f6]">
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2 pointer-events-none">
+      <div className="flex-1 px-8 py-6 flex flex-col pointer-events-auto bg-[#FFFDF9]">
+        <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-black uppercase tracking-[0.2em] text-black mb-4 pointer-events-none">
           {WEEKDAY_LABELS.map((label) => (
             <span key={label} className="py-2">{label}</span>
           ))}
@@ -88,32 +130,35 @@ function PageContent({ pageDate, today, startDate, endDate, onSelectDay, interac
             const isCurrentDay = isSameDay(dateObj, today);
             const hasRange = Boolean(startDate && endDate);
             const isBetween = hasRange && dateObj.getTime() > (startDate?.getTime() || 0) && dateObj.getTime() < (endDate?.getTime() || 0);
+            
+            const dayEvents = events?.[getEventKey(dateObj)] || [];
+            const hasEvents = dayEvents.length > 0;
 
-            let buttonClass = "aspect-square flex items-center justify-center rounded-full text-sm font-medium transition-all relative z-10 w-12";
+            let buttonClass = "aspect-square flex flex-col items-center justify-center text-[13px] font-bold transition-all duration-100 relative z-10 w-11";
             const wrapClass = "relative flex items-center justify-center";
             let connectBg = null;
 
-            if (interactive) buttonClass += " hover:bg-zinc-200 focus:outline-none cursor-pointer";
+            if (interactive) buttonClass += " hover:-translate-y-0.5 hover:shadow-[2px_2px_0_black] hover:bg-[#FFE690] hover:border-2 hover:border-black rounded-[50%_40%_60%_40%] cursor-pointer";
 
             if (isStart && startDate && endDate && startDate.getTime() !== endDate.getTime()) {
-              connectBg = "absolute right-0 w-1/2 h-full bg-zinc-200/70 -z-10";
+              connectBg = "absolute right-0 w-1/2 h-full bg-[#E5E0D8] border-y-2 border-black -z-10";
             } else if (isEnd && startDate && endDate && startDate.getTime() !== endDate.getTime()) {
-              connectBg = "absolute left-0 w-1/2 h-full bg-zinc-200/70 -z-10";
+              connectBg = "absolute left-0 w-1/2 h-full bg-[#E5E0D8] border-y-2 border-black -z-10";
             } else if (isBetween) {
-              connectBg = "absolute inset-0 w-full h-full bg-zinc-200/70 -z-10";
+              connectBg = "absolute inset-0 w-full h-full bg-[#E5E0D8] border-y-2 border-black -z-10";
             }
 
             if (isStart || isEnd) {
-              buttonClass += " bg-zinc-900 text-[#faf9f6] shadow-md scale-105";
-              if (interactive) buttonClass += " hover:bg-zinc-800";
+              buttonClass += " bg-[#FF9B9B] text-black border-2 border-black shadow-[3px_3px_0_black] scale-[1.1] rounded-[255px_15px_225px_15px/15px_225px_15px_255px]";
+              if (interactive) buttonClass += " active:shadow-none active:translate-y-[3px] active:translate-x-[3px]";
             } else if (isBetween) {
-              buttonClass += " text-zinc-900 bg-transparent";
+              buttonClass += " text-black bg-transparent font-black";
             } else {
-              buttonClass += " text-zinc-700";
+              buttonClass += " text-black/70";
             }
 
             if (isCurrentDay && !isStart && !isEnd) {
-              buttonClass += " ring-2 ring-inset ring-zinc-900 font-bold";
+              buttonClass += " bg-[#86efac] border-[3px] border-black text-black rounded-[15px_225px_15px_255px/255px_15px_225px_15px] shadow-[2px_2px_0_black] z-20";
             }
 
             return (
@@ -124,9 +169,24 @@ function PageContent({ pageDate, today, startDate, endDate, onSelectDay, interac
                   disabled={!interactive}
                   onPointerDown={(e) => e.stopPropagation()} 
                   onClick={() => onSelectDay?.(day)}
+                  onDoubleClick={() => onDoubleClickDay?.(dateObj)}
                   className={buttonClass}
                 >
-                  {day}
+                  <span className="leading-none">{day}</span>
+                  {hasEvents && (
+                    <div className="flex flex-col items-center w-full px-0.5 mt-0.5 pointer-events-none">
+                      <span className="text-[8px] sm:text-[9px] leading-tight truncate w-full text-center font-bold bg-blue-200 border border-black/50 rounded-sm px-0.5">
+                        {dayEvents[0].title}
+                      </span>
+                      {dayEvents.length > 1 && (
+                        <div className="flex gap-0.5 mt-0.5">
+                          {dayEvents.slice(1, 4).map((e, i) => (
+                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-blue-500 border border-black/20" />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </button>
               </div>
             );
@@ -190,11 +250,11 @@ const pageVariants = {
 };
 
 function PhysicsPage({
-  pageDate, today, startDate, endDate, onSelectDay, onFlipComplete, onIntentChange, isSwipeFlip, direction, parentDragY
+  pageDate, today, startDate, endDate, onSelectDay, onDoubleClickDay, events, onFlipComplete, onIntentChange, isSwipeFlip, direction, parentDragY, note, onNoteChange
 }: {
   pageDate: Date, today: Date, startDate: Date | null, endDate: Date | null,
-  onSelectDay: (day: number) => void, onFlipComplete: (dir: number) => void, onIntentChange: (dir: number) => void, isSwipeFlip: boolean, direction: number,
-  parentDragY: MotionValue<number>
+  onSelectDay: (day: number) => void, onDoubleClickDay: (date: Date) => void, events: Record<string, { id: string; title: string }[]>, onFlipComplete: (dir: number) => void, onIntentChange: (dir: number) => void, isSwipeFlip: boolean, direction: number,
+  parentDragY: MotionValue<number>, note: string, onNoteChange: (note: string) => void
 }) {
   const [isFlipping, setIsFlipping] = useState(false);
 
@@ -287,15 +347,15 @@ function PhysicsPage({
         className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing group pointer-events-auto"
       >
       <div 
-        className="absolute inset-0 bg-[#faf9f6] rounded-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.3)] border border-zinc-200/50 flex flex-col overflow-hidden"
-        style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
+        className="isolate absolute inset-0 bg-[#FFFDF9] rounded-[2rem_0.5rem_1.5rem_1rem] shadow-[8px_8px_0_rgba(0,0,0,0.8)] border-[3px] border-black flex flex-col overflow-hidden"
+        style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", borderRadius: "10px 20px 10px 15px / 15px 10px 20px 10px" }}
       >
         <motion.div 
-          className="absolute inset-0 z-30 pointer-events-none mix-blend-overlay"
+          className="absolute inset-0 z-30 pointer-events-none mix-blend-overlay opacity-50"
           style={{
             background: useTransform(
               lightingPos, 
-              (pos) => `linear-gradient(${pos}deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(0,0,0,0.1) 100%)`
+              (pos) => `linear-gradient(${pos}deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 40%, rgba(0,0,0,0.1) 100%)`
             )
           }}
         />
@@ -307,24 +367,47 @@ function PhysicsPage({
         <PageContent 
           pageDate={pageDate} today={today} startDate={startDate} 
           endDate={endDate} onSelectDay={onSelectDay} 
+          onDoubleClickDay={onDoubleClickDay} events={events}
+          note={note} onNoteChange={onNoteChange}
         />
 
-        <div className="absolute bottom-0 right-0 w-16 h-16 pointer-events-none overflow-hidden">
-          <div className="absolute bottom-[-10px] right-[-10px] w-full h-full bg-gradient-to-tl from-black/10 to-transparent rounded-tl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:-translate-x-1 group-hover:-translate-y-1" />
-          <MoveUpRight className="absolute bottom-3 right-3 w-5 h-5 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute bottom-0 right-0 w-24 h-24 pointer-events-none overflow-hidden">
+          <div className="absolute bottom-[-10px] right-[-10px] w-full h-full bg-black/10 rounded-[20%_0_0_20%] opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform group-hover:-translate-x-1 group-hover:-translate-y-1" />
+          <MoveUpRight className="absolute bottom-4 right-4 w-6 h-6 text-black opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0 drop-shadow-[1px_1px_0_white]" />
         </div>
       </div>
 
       <div 
-        className="absolute inset-0 bg-[#e8e6e1] rounded-xl border border-zinc-300 overflow-hidden shadow-inner flex items-center justify-center pointer-events-none"
+        className="isolate absolute inset-0 bg-[#EAE5D9] border-[3px] border-black overflow-hidden flex flex-col pointer-events-none"
         style={{ 
           backfaceVisibility: "hidden", 
           WebkitBackfaceVisibility: "hidden", 
-          transform: "rotateX(180deg)" 
+          transform: "rotateX(180deg)",
+          borderRadius: "15px 10px 20px 10px / 10px 20px 10px 15px"
         }}
       >
-        <div className="w-full h-full opacity-20 filter blur-sm bg-zinc-300 flex items-center justify-center scale-x-[-1]">
-           <span className="text-zinc-600 font-medium text-2xl uppercase tracking-widest">Placeholder</span>
+        <div className="absolute inset-0 bg-black opacity-10" />
+        
+        {/* Punch Holes (Back) - Holes Only */}
+        <div className="absolute top-4 left-0 w-full flex justify-evenly px-10 z-[60] pointer-events-none">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={`hole-back-group-${i}`} className="relative flex justify-center">
+              {/* The Transparent Hole (Knockout) */}
+              <div className="w-[14px] h-[14px] bg-black mix-blend-destination-out rounded-[45%_55%_40%_60%] absolute top-0" />
+              {/* Outline Overlay */}
+              <div className="w-[14px] h-[14px] border-[2px] border-black rounded-[45%_55%_40%_60%] shadow-[inset_-2px_2px_0_black,1px_1px_0_white] relative z-10 flex justify-center pointer-events-none" />
+            </div>
+          ))}
+        </div>
+
+        <div className="w-full h-48 sm:h-65 bg-[#C9C2B5] border-b-[3px] border-black flex items-center justify-center opacity-90">
+           {/* Abstract back placeholder */}
+           <div className="w-16 h-16 rounded-[40%_60%_70%_30%] border-4 border-black/30" />
+        </div>
+        <div className="flex-1 flex flex-col px-8 py-6 opacity-40 gap-4">
+          <div className="h-3 bg-black rounded-[5px_2px_4px_3px] w-full" />
+          <div className="h-3 bg-black rounded-[3px_4px_2px_5px] w-5/6" />
+          <div className="h-3 bg-black rounded-[4px_2px_5px_3px] w-4/6" />
         </div>
       </div>
       </motion.div>
@@ -342,9 +425,27 @@ export function Calendar() {
   const [isSwipeFlip, setIsSwipeFlip] = useState(false);
   const [intendedDir, setIntendedDir] = useState(1); // Drives what shows underneath while dragging
 
+  const [notes, setNotes] = useState<Record<string, string>>({});
+
+  const [events, setEvents] = useState<Record<string, { id: string; title: string }[]>>({});
+  const [eventModalDate, setEventModalDate] = useState<Date | null>(null);
+
+  const getNoteKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}`;
+
+  const handleNoteChange = (date: Date, text: string) => {
+    setNotes(prev => ({ ...prev, [getNoteKey(date)]: text }));
+  };
+
   const parentDragY = useMotionValue(0);
   const bgShadowOpacity = useTransform(parentDragY, [-800, -400, 0, 400, 800], [0, 0.02, 0.05, 0.02, 0]);
   const bgScale = useTransform(parentDragY, [-900, 0, 900], [1, 0.85, 1]);
+
+  // Calendar Swing Physics
+  const calendarDragX = useMotionValue(0);
+  const calendarDragY = useMotionValue(0);
+  const calendarSpringX = useSpring(calendarDragX, { stiffness: 150, damping: 12, mass: 1 });
+  const calendarSpringY = useSpring(calendarDragY, { stiffness: 150, damping: 12, mass: 1 });
+  const calendarRotateZ = useTransform(calendarSpringX, [-300, 300], [-10, 10]);
 
   const changeMonth = (offset: number, isSwipe = false) => {
     setDirection(offset);
@@ -366,39 +467,54 @@ export function Calendar() {
   const backgroundDate = addMonths(currentDate, intendedDir);
 
   return (
-    <main className="min-h-screen bg-[#e8e6df] flex items-center justify-center p-4 md:p-12 font-sans selection:bg-zinc-900 selection:text-white overflow-hidden select-none">
-      <div className="relative w-full max-w-[600px] mx-auto flex flex-col items-center">
+    <main className="min-h-screen bg-[#FFF9E6] flex items-center justify-center p-4 md:p-12 font-sans selection:bg-[#FF9B9B] selection:text-black overflow-hidden select-none relative">
+      {/* Soft environmental lighting / Manga background dots */}
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle,#A3A3A3_1px,transparent_1px)] opacity-10 pointer-events-none" style={{ backgroundSize: "24px 24px" }} />
+
+      <button className="absolute top-6 right-6 p-3 rounded-[30%_70%_50%_50%] bg-white border-[3px] border-black text-black shadow-[4px_4px_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-1 active:translate-x-1 active:shadow-[1px_1px_0_black] transition-all z-50">
+        <Settings className="w-6 h-6" />
+      </button>
+
+      <div className="relative w-full max-w-[500px] mx-auto flex flex-col items-center">
         
+        {/* The Wall Nail & Lanyard */}
+        <div className="absolute top-[10px] sm:top-[20px] left-1/2 -translate-x-1/2 flex flex-col items-center z-0 pointer-events-none">
+          {/* Nail shadow & body */}
+          <div className="relative w-4 h-4 bg-[#737373] rounded-full border-[2px] border-black shadow-[2px_3px_0_rgba(0,0,0,0.5)] z-20 flex items-center justify-center">
+            {/* Nail shine */}
+            <div className="absolute top-[2px] left-[2px] w-1.5 h-1.5 bg-white/70 rounded-full" />
+            <div className="w-1 h-1 bg-black/40 rounded-full" />
+          </div>
+          {/* Lanyard strings connecting to calendar */}
+          <svg className="absolute top-2 w-[400px] h-[60px] sm:h-[50px] -z-10" viewBox="0 0 400 60">
+            {/* Left string */}
+            <path d="M 200,0 L 70,60" stroke="black" strokeWidth="2.5" />
+            <path d="M 200,0 L 70,60" stroke="white" strokeWidth="1" strokeDasharray="4 4" />
+            {/* Right string */}
+            <path d="M 200,0 L 330,60" stroke="black" strokeWidth="2.5" />
+            <path d="M 200,0 L 330,60" stroke="white" strokeWidth="1" strokeDasharray="4 4" />
+          </svg>
+        </div>
+
         <div className="flex w-full items-center justify-end mb-8 px-2 z-50">
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               onClick={() => changeMonth(-1, false)}
-              className="p-2.5 rounded-full border border-zinc-300 bg-[#faf9f6] text-zinc-600 shadow-sm hover:bg-white hover:text-zinc-900 transition-all active:scale-95"
+              className="p-3 rounded-[40%_60%_70%_30%] bg-white border-[3px] border-black text-black shadow-[4px_4px_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-1 active:translate-x-1 active:shadow-[1px_1px_0_black] transition-all"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-5 h-5 stroke-[3]" />
             </button>
             <button
               onClick={() => changeMonth(1, false)}
-              className="p-2.5 rounded-full border border-zinc-300 bg-[#faf9f6] text-zinc-600 shadow-sm hover:bg-white hover:text-zinc-900 transition-all active:scale-95"
+              className="p-3 rounded-[60%_40%_30%_70%] bg-white border-[3px] border-black text-black shadow-[4px_4px_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-1 active:translate-x-1 active:shadow-[1px_1px_0_black] transition-all"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-5 h-5 stroke-[3]" />
             </button>
           </div>
         </div>
 
-        <div className="relative w-full h-[620px] sm:h-[720px]" style={{ perspective: "2000px" }}>
-          <div className="absolute top-0 left-0 w-full flex justify-evenly px-8 z-50 pointer-events-none transform -translate-y-[45%] drop-shadow-xl">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div 
-                key={`spiral-${i}`} 
-                className="w-3 h-11 bg-gradient-to-b from-zinc-200 via-zinc-400 to-zinc-600 rounded-full border border-zinc-500/50 relative shadow-[0_5px_10px_rgba(0,0,0,0.5)]"
-              >
-                <div className="absolute inset-x-0.5 top-0 bottom-0 bg-gradient-to-r from-transparent via-white/60 to-transparent rounded-full" />
-              </div>
-            ))}
-          </div>
-
-          <div className="absolute inset-0 w-full h-full bg-[#faf9f6] rounded-xl border border-zinc-300 shadow-[0_10px_30px_rgba(0,0,0,0.15)] z-0 pointer-events-none overflow-hidden">
+        <div className="relative w-full h-[580px] sm:h-[680px]" style={{ perspective: "2500px" }}>
+          <div className="isolate absolute inset-0 w-full h-full bg-[#EAE5D9] border-[3px] border-black shadow-[0_0_0_black] z-0 pointer-events-none overflow-hidden" style={{ borderRadius: "10px 20px 10px 15px / 15px 10px 20px 10px" }}>
              <AnimatePresence mode="popLayout" initial={false}>
                <motion.div
                  key={backgroundDate.toISOString()}
@@ -412,6 +528,7 @@ export function Calendar() {
                  <PageContent 
                     pageDate={backgroundDate} today={today} 
                     startDate={startDate} endDate={endDate} interactive={false} 
+                    note={notes[getNoteKey(backgroundDate)] || ""}
                  />
                  {/* Fake depth shadow behind the active page */}
                  <motion.div 
@@ -422,8 +539,13 @@ export function Calendar() {
              </AnimatePresence>
           </div>
 
-          <div className="absolute inset-0 w-full h-full bg-[#f0eee9] rounded-xl border border-zinc-300 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1)] -z-10 transform scale-[0.98] translate-y-2" />
-          <div className="absolute inset-0 w-full h-full bg-[#e8e6df] rounded-xl border border-zinc-300 -z-20 transform scale-[0.96] translate-y-4 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.32),0_30px_60px_-30px_rgba(0,0,0,0.5)]" />
+          <div className="absolute inset-0 w-full h-full bg-black -z-10 transform translate-y-[6px] translate-x-[6px] rounded-[10px_20px_10px_15px/15px_10px_20px_10px]" />
+          
+          {/* Realistic background shadows mimicking a soft, broad light source */}
+          <div className="absolute inset-0 w-full h-full bg-black/35 blur-[80px] -z-30 transform translate-y-12 -translate-x-24 scale-[1.05] rounded-[10px_20px_10px_15px]" />
+          <div className="absolute inset-0 w-full h-full bg-black/25 blur-[40px] -z-30 transform translate-y-8 -translate-x-12 rounded-[10px_20px_10px_15px]" />
+          
+          <div className="absolute inset-0 w-full h-full bg-[#EAE5D9] border-[3px] border-black -z-20 transform scale-[0.98] translate-y-3 translate-x-2" style={{ borderRadius: "10px 20px 10px 15px / 15px 10px 20px 10px" }} />
 
           <AnimatePresence mode="popLayout" custom={{ dir: direction, isSwipe: isSwipeFlip }} initial={false}>
             <PhysicsPage
@@ -433,16 +555,100 @@ export function Calendar() {
               startDate={startDate}
               endDate={endDate}
               onSelectDay={handleSelectDay}
+              onDoubleClickDay={(date) => setEventModalDate(date)}
+              events={events}
               onIntentChange={(dir: number) => setIntendedDir(dir)}
               onFlipComplete={(dir: number) => changeMonth(dir, true)}
               isSwipeFlip={isSwipeFlip}
               direction={direction}
               parentDragY={parentDragY}
+              note={notes[getNoteKey(currentDate)] || ""}
+              onNoteChange={(text) => handleNoteChange(currentDate, text)}
             />
           </AnimatePresence>
           
         </div>
       </div>
+
+      {/* Event Modal */}
+      <AnimatePresence>
+        {eventModalDate && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+            onClick={() => setEventModalDate(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-white border-[3px] border-black rounded-[15px_5px_10px_20px] shadow-[8px_8px_0_black] p-6 relative flex flex-col"
+            >
+              <button
+                onClick={() => setEventModalDate(null)}
+                className="absolute top-4 right-4 text-black hover:scale-110 active:scale-95 transition-transform"
+              >
+                <X className="w-6 h-6 stroke-[3]" />
+              </button>
+              <h3 className="text-xl font-black uppercase tracking-tight mb-6">
+                {eventModalDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </h3>
+              
+              <div className="flex flex-col gap-3 mb-6 flex-1 min-h-[100px] max-h-[300px] overflow-y-auto pr-2">
+                {!(events[getEventKey(eventModalDate)]?.length) && (
+                  <p className="text-sm font-bold text-gray-400 italic">No events.</p>
+                )}
+                {events[getEventKey(eventModalDate)]?.map((ev, i) => (
+                  <div key={ev.id} className="flex items-center justify-between p-3 bg-[#EAE5D9] border-2 border-black rounded-lg shadow-[2px_2px_0_black]">
+                    <span className="font-bold text-sm">{ev.title}</span>
+                    <button
+                      onClick={() => setEvents(prev => ({
+                        ...prev,
+                        [getEventKey(eventModalDate)]: prev[getEventKey(eventModalDate)].filter(e => e.id !== ev.id)
+                      }))}
+                      className="text-red-500 hover:text-red-700 font-black text-xl leading-none"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target as HTMLFormElement;
+                  const input = form.elements.namedItem("title") as HTMLInputElement;
+                  if (!input.value.trim()) return;
+                  const key = getEventKey(eventModalDate);
+                  setEvents(prev => ({
+                    ...prev,
+                    [key]: [...(prev[key] || []), { id: Math.random().toString(), title: input.value.trim() }]
+                  }));
+                  input.value = "";
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  name="title"
+                  autoFocus
+                  placeholder="New Event..."
+                  className="flex-1 bg-[#F5F5F5] border-2 border-black rounded-md px-3 py-2 text-sm font-bold outline-none focus:bg-[#FFFDF9] focus:shadow-[inset_0_0_0_2px_black]"
+                />
+                <button
+                  type="submit"
+                  className="bg-[#FF9B9B] border-2 border-black rounded-md px-4 py-2 text-sm font-black uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-[1px_1px_0_black] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all"
+                >
+                  Add
+                </button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

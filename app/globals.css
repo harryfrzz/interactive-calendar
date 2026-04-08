@@ -16,12 +16,16 @@
   --color-paper-muted: var(--paper-muted);
   --color-ink-soft: var(--ink-soft);
   --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-geist-pixel-square);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: linear-gradient(180deg, #f4ecde 0%, #eee2cf 48%, #e7dac5 100%);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
+  font-family: var(--font-geist-pixel-square), "Segoe UI", sans-serif;
+}
+
+.font-sora{
+  font-family: var(--font-sora);
 }
