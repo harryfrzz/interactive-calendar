@@ -358,6 +358,56 @@ export function Calendar() {
               
               <div className="flex flex-col gap-4">
                 <div>
+                  <label className="text-xs font-black uppercase text-[#3b82f6] mb-1 block">Events</label>
+                  <div className="flex flex-col gap-2 max-h-[120px] overflow-y-auto pr-1">
+                    {!(events[getEventKey(eventModalDate)]?.length) && (
+                      <p className="text-xs font-bold text-black/40 italic">No events.</p>
+                    )}
+                    {events[getEventKey(eventModalDate)]?.map((ev) => (
+                      <div key={ev.id} className="flex items-center justify-between p-2 bg-[#EAE5D9] border-2 border-black rounded-md shadow-[1px_1px_0_black]">
+                        <span className="font-bold text-xs text-black break-words flex-1 pr-2">{ev.title}</span>
+                        <button
+                          onClick={() => setEvents(prev => ({
+                            ...prev,
+                            [getEventKey(eventModalDate)]: prev[getEventKey(eventModalDate)].filter(e => e.id !== ev.id)
+                          }))}
+                          className="text-red-500 hover:text-red-700 font-black text-lg leading-none"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      const title = formData.get("eventTitle") as string;
+                      if (!title || !title.trim()) return;
+                      const key = getEventKey(eventModalDate);
+                      setEvents(prev => ({
+                        ...prev,
+                        [key]: [...(prev[key] || []), { id: Math.random().toString(), title: title.trim() }]
+                      }));
+                      e.currentTarget.reset();
+                    }}
+                    className="flex gap-2 mt-2"
+                  >
+                    <input
+                      name="eventTitle"
+                      placeholder="Add event..."
+                      className="flex-1 bg-[#F5F5F5] border-2 border-black rounded-md px-2 py-1 text-xs font-bold text-black outline-none focus:shadow-[inset_0_0_0_2px_black]"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-[#3b82f6] border-2 border-black rounded-md px-3 py-1 text-xs font-black uppercase shadow-[1px_1px_0_black] hover:translate-y-[1px] hover:shadow-none active:translate-y-[2px] active:shadow-none transition-all"
+                    >
+                      Add
+                    </button>
+                  </form>
+                </div>
+
+                <div>
                   <label className="text-xs font-black uppercase text-black/60 mb-1 block">Day Note</label>
                   <textarea
                     value={dateNotes[getEventKey(eventModalDate)] || ""}
