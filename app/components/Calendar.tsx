@@ -28,12 +28,14 @@ export function Calendar() {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [notePositions, setNotePositions] = useState<Record<string, { x: number; y: number }>>({});
   const [events, setEvents] = useState<Record<string, { id: string; title: string }[]>>({});
+  const [dateNotes, setDateNotes] = useState<Record<string, string>>({});
   const [eventModalDate, setEventModalDate] = useState<Date | null>(null);
   const [isNoteDragging, setIsNoteDragging] = useState(false);
   const [backgroundPattern, setBackgroundPattern] = useState("dots");
   const [tasks, setTasks] = useState<{ id: string; title: string; completed: boolean; date: string; color: string }[]>([]);
   const [showTasks, setShowTasks] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [activeTab, setActiveTab] = useState<"events" | "note">("events");
   const [selectedColor, setSelectedColor] = useState("#FCE996");
 
   const [isLoaded, setIsLoaded] = useState(false);
@@ -47,6 +49,9 @@ export function Calendar() {
     
     const savedPositions = localStorage.getItem("calendar-note-positions");
     if (savedPositions) setNotePositions(JSON.parse(savedPositions));
+    
+    const savedDateNotes = localStorage.getItem("calendar-date-notes");
+    if (savedDateNotes) setDateNotes(JSON.parse(savedDateNotes));
     
     setIsLoaded(true);
   }, []);
@@ -68,6 +73,12 @@ export function Calendar() {
       localStorage.setItem("calendar-note-positions", JSON.stringify(notePositions));
     }
   }, [notePositions, isLoaded]);
+
+  React.useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem("calendar-date-notes", JSON.stringify(dateNotes));
+    }
+  }, [dateNotes, isLoaded]);
 
   React.useEffect(() => {
     const savedTasks = localStorage.getItem("calendar-tasks");
@@ -180,6 +191,7 @@ export function Calendar() {
                       onMonthChange={handleMonthChange}
                       onYearChange={handleYearChange}
                       tasks={tasks.filter(t => !t.completed)}
+                      dateNotes={dateNotes}
                     />
                     <motion.div 
                       className="absolute inset-0 bg-black pointer-events-none z-10" 
@@ -207,7 +219,9 @@ export function Calendar() {
                   onDoubleClickDay={(date) => setEventModalDate(date)}
                   events={events}
                   onIntentChange={(dir: number) => setIntendedDir(dir)}
-                  onFlipComplete={(dir: number) => changeMonth(dir, true)}
+                  onFlipComplete={(dir: number) => {
+                    changeMonth(dir, true);
+                  }}
                   isSwipeFlip={isSwipeFlip}
                   direction={direction}
                   parentDragY={parentDragY}
@@ -222,6 +236,7 @@ export function Calendar() {
                   onTaskClick={(taskId) => {
                     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: true } : t));
                   }}
+                  dateNotes={dateNotes}
                 />
               </AnimatePresence>
               
@@ -277,58 +292,103 @@ export function Calendar() {
               >
                 <X className="w-6 h-6 stroke-[3]" />
               </button>
-              <h3 className="text-xl font-black uppercase tracking-tight mb-6">
+              <h3 className="text-xl font-black uppercase tracking-tight mb-4">
                 {eventModalDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
               </h3>
               
-              <div className="flex flex-col gap-3 mb-6 flex-1 min-h-[100px] max-h-[300px] overflow-y-auto pr-2">
-                {!(events[getEventKey(eventModalDate)]?.length) && (
-                  <p className="text-sm font-bold text-gray-400 italic">No events.</p>
-                )}
-                {events[getEventKey(eventModalDate)]?.map((ev) => (
-                  <div key={ev.id} className="flex items-center justify-between p-3 bg-[#EAE5D9] border-2 border-black rounded-lg shadow-[2px_2px_0_black]">
-                    <span className="font-bold text-sm text-black break-words flex-1 pr-2">{ev.title}</span>
-                    <button
-                      onClick={() => setEvents(prev => ({
-                        ...prev,
-                        [getEventKey(eventModalDate)]: prev[getEventKey(eventModalDate)].filter(e => e.id !== ev.id)
-                      }))}
-                      className="text-red-500 hover:text-red-700 font-black text-xl leading-none"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
-                  const title = formData.get("title") as string;
-                  if (!title || !title.trim()) return;
-                  const key = getEventKey(eventModalDate);
-                  setEvents(prev => ({
-                    ...prev,
-                    [key]: [...(prev[key] || []), { id: Math.random().toString(), title: title.trim() }]
-                  }));
-                  e.currentTarget.reset();
-                }}
-                className="flex gap-2"
-              >
-                <input
-                  name="title"
-                  autoFocus
-                  placeholder="New Event..."
-                  className="flex-1 bg-[#F5F5F5] border-2 border-black rounded-md px-3 py-2 text-sm font-bold text-black outline-none focus:bg-[#FFFDF9] focus:shadow-[inset_0_0_0_2px_black]"
-                />
+              <div className="flex gap-2 mb-4">
                 <button
-                  type="submit"
-                  className="bg-[#FF9B9B] border-2 border-black rounded-md px-4 py-2 text-sm font-black uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-[1px_1px_0_black] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all"
+                  type="button"
+                  onClick={() => setActiveTab("events")}
+                  className={`flex-1 py-2 px-3 text-xs font-black uppercase rounded-md border-2 border-black transition-all ${activeTab === "events" ? "bg-black text-white" : "bg-white text-black hover:bg-gray-100"}`}
                 >
-                  Add
+                  Events
                 </button>
-              </form>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("note")}
+                  className={`flex-1 py-2 px-3 text-xs font-black uppercase rounded-md border-2 border-black transition-all ${activeTab === "note" ? "bg-black text-white" : "bg-white text-black hover:bg-gray-100"}`}
+                >
+                  Note
+                </button>
+              </div>
+              
+              {activeTab === "events" && (
+                <>
+                  <div className="flex flex-col gap-3 mb-4 flex-1 min-h-[100px] max-h-[200px] overflow-y-auto pr-2">
+                    {!(events[getEventKey(eventModalDate)]?.length) && (
+                      <p className="text-sm font-bold text-gray-400 italic">No events.</p>
+                    )}
+                    {events[getEventKey(eventModalDate)]?.map((ev) => (
+                      <div key={ev.id} className="flex items-center justify-between p-3 bg-[#EAE5D9] border-2 border-black rounded-lg shadow-[2px_2px_0_black]">
+                        <span className="font-bold text-sm text-black break-words flex-1 pr-2">{ev.title}</span>
+                        <button
+                          onClick={() => setEvents(prev => ({
+                            ...prev,
+                            [getEventKey(eventModalDate)]: prev[getEventKey(eventModalDate)].filter(e => e.id !== ev.id)
+                          }))}
+                          className="text-red-500 hover:text-red-700 font-black text-xl leading-none"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      const title = formData.get("title") as string;
+                      if (!title || !title.trim()) return;
+                      const key = getEventKey(eventModalDate);
+                      setEvents(prev => ({
+                        ...prev,
+                        [key]: [...(prev[key] || []), { id: Math.random().toString(), title: title.trim() }]
+                      }));
+                      e.currentTarget.reset();
+                    }}
+                    className="flex gap-2"
+                  >
+                    <input
+                      name="title"
+                      autoFocus
+                      placeholder="New Event..."
+                      className="flex-1 bg-[#F5F5F5] border-2 border-black rounded-md px-3 py-2 text-sm font-bold text-black outline-none focus:bg-[#FFFDF9] focus:shadow-[inset_0_0_0_2px_black]"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-[#FF9B9B] border-2 border-black rounded-md px-4 py-2 text-sm font-black uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-[1px_1px_0_black] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all"
+                    >
+                      Add
+                    </button>
+                  </form>
+                </>
+              )}
+              
+              {activeTab === "note" && (
+                <>
+                  <textarea
+                    value={dateNotes[getEventKey(eventModalDate)] || ""}
+                    onChange={(e) => setDateNotes(prev => ({ ...prev, [getEventKey(eventModalDate)]: e.target.value }))}
+                    placeholder="Add a note for this date..."
+                    className="w-full h-32 bg-[#F5F5F5] border-2 border-black rounded-md px-3 py-2 text-sm font-bold text-black outline-none focus:bg-[#FFFDF9] focus:shadow-[inset_0_0_0_2px_black] resize-none"
+                  />
+                  {(dateNotes[getEventKey(eventModalDate)] || "").length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setDateNotes(prev => {
+                        const newNotes = { ...prev };
+                        delete newNotes[getEventKey(eventModalDate)];
+                        return newNotes;
+                      })}
+                      className="mt-2 text-xs font-bold text-red-500 hover:text-red-700"
+                    >
+                      Clear Note
+                    </button>
+                  )}
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}

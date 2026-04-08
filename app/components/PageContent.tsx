@@ -21,6 +21,7 @@ interface PageContentProps {
   onSelectDay?: (day: number) => void;
   onDoubleClickDay?: (date: Date) => void;
   events?: Record<string, { id: string; title: string }[]>;
+  dateNotes?: Record<string, string>;
   interactive?: boolean;
   note?: string;
   onNoteChange?: (note: string) => void;
@@ -41,6 +42,7 @@ export function PageContent({
   onSelectDay,
   onDoubleClickDay,
   events,
+  dateNotes,
   interactive = true,
   note,
   onNoteChange,
@@ -224,6 +226,8 @@ export function PageContent({
             
             const dayEvents = events?.[getEventKey(dateObj)] || [];
             const hasEvents = dayEvents.length > 0;
+            const dayNote = dateNotes?.[getEventKey(dateObj)] || "";
+            const hasNote = dayNote.length > 0;
 
             let buttonClass = "aspect-square h-11 w-11 flex flex-col items-center justify-center text-[12px] font-bold transition-all duration-100 relative z-10 w-11";
             const wrapClass = "relative flex items-center justify-center";
@@ -281,6 +285,9 @@ export function PageContent({
                         </div>
                       )}
                     </div>
+                  )}
+                  {hasNote && (
+                    <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#FCE996] border-[1.5px] border-black shadow-[1px_1px_0_black] ${hasEvents ? '-top-0.5 -right-0.5' : ''}`} />
                   )}
                 </button>
               </div>
