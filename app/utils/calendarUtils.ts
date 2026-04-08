@@ -3,16 +3,16 @@ export const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export const HERO_IMAGES: string[] = [
+  "/image-4.png",
   "/image-1.png",
   "/image-2.png",
   "/image-3.png",
-  "/image-4.png",
+  "/image-7.png",
   "/image-5.png",
   "/image-6.png",
-  "/image-7.png",
   "/image-8.png",
-  "/image-9.png",
   "/image-10.png",
+  "/image-9.png",
   "/image-11.png",
   "/image-12.png"
 ];
