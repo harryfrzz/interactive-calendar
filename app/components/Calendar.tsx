@@ -83,7 +83,7 @@ interface PageContentProps {
   onNotePositionChange?: (position: { x: number; y: number }) => void;
   onNoteDragChange?: (isDragging: boolean) => void;
   tasks?: { id: string; title: string; completed: boolean; color: string }[];
-  onTaskClick?: () => void;
+  onTaskClick?: (taskId: string) => void;
 }
 
 function getEventKey(date: Date) {
@@ -126,14 +126,19 @@ function PageContent({ pageDate, today, startDate, endDate, onSelectDay, onDoubl
       {tasks && tasks.length > 0 && (
         <div className="absolute -right-10 top-20 z-40 flex flex-col gap-2 pointer-events-auto">
           {tasks.slice(0, 5).map((task, idx) => (
-            <div
+            <motion.div
               key={task.id}
               className="w-16 py-2 px-1 border-2 border-black shadow-[2px_2px_0_black] rotate-[3deg] cursor-pointer"
               style={{ backgroundColor: task.color }}
-              onClick={onTaskClick}
+              whileHover={{ scale: 1.05, rotate: 0 }}
+              onClick={() => onTaskClick?.(task.id)}
+              layout
+              initial={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50, rotate: 20, scale: 0.5 }}
+              transition={{ duration: 0.3 }}
             >
               <span className="text-[8px] font-black text-black truncate block">{task.title.slice(0, 10)}</span>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
@@ -380,11 +385,11 @@ const pageVariants = {
 };
 
 function PhysicsPage({
-  pageDate, today, startDate, endDate, onSelectDay, onDoubleClickDay, events, onFlipComplete, onIntentChange, isSwipeFlip, direction, parentDragY, note, onNoteChange, onMonthChange, onYearChange, notePosition, onNotePositionChange, onNoteDragChange, tasks
+  pageDate, today, startDate, endDate, onSelectDay, onDoubleClickDay, events, onFlipComplete, onIntentChange, isSwipeFlip, direction, parentDragY, note, onNoteChange, onMonthChange, onYearChange, notePosition, onNotePositionChange, onNoteDragChange, tasks, onTaskClick
 }: {
   pageDate: Date, today: Date, startDate: Date | null, endDate: Date | null,
   onSelectDay: (day: number) => void, onDoubleClickDay: (date: Date) => void, events: Record<string, { id: string; title: string }[]>, onFlipComplete: (dir: number) => void, onIntentChange: (dir: number) => void, isSwipeFlip: boolean, direction: number,
-  parentDragY: MotionValue<number>, note: string, onNoteChange: (note: string) => void, onMonthChange?: (month: number) => void, onYearChange?: (year: number) => void, notePosition?: { x: number; y: number }, onNotePositionChange?: (position: { x: number; y: number }) => void, onNoteDragChange?: (isDragging: boolean) => void, tasks?: { id: string; title: string; completed: boolean; color: string }[]
+  parentDragY: MotionValue<number>, note: string, onNoteChange: (note: string) => void, onMonthChange?: (month: number) => void, onYearChange?: (year: number) => void, notePosition?: { x: number; y: number }, onNotePositionChange?: (position: { x: number; y: number }) => void, onNoteDragChange?: (isDragging: boolean) => void, tasks?: { id: string; title: string; completed: boolean; color: string }[], onTaskClick?: (taskId: string) => void
 }) {
   const [isFlipping, setIsFlipping] = useState(false);
   const [isNoteDragging, setIsNoteDragging] = useState(false);
@@ -509,7 +514,7 @@ function PhysicsPage({
           onNotePositionChange={onNotePositionChange}
           onNoteDragChange={setIsNoteDragging}
           tasks={tasks}
-          onTaskClick={() => {}}
+          onTaskClick={onTaskClick}
         />
 
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none flex items-center gap-1.5">
@@ -571,6 +576,7 @@ export function Calendar() {
   const [tasks, setTasks] = useState<{ id: string; title: string; completed: boolean; date: string; color: string }[]>([]);
   const [showTasks, setShowTasks] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [selectedColor, setSelectedColor] = useState("#FCE996");
 
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -665,15 +671,15 @@ export function Calendar() {
     
     switch (pattern) {
       case "dots":
-        return { ...baseStyle, backgroundImage: "radial-gradient(#A3A3A3 1px, transparent 1px)", backgroundSize: "24px 24px" };
+        return { ...baseStyle, backgroundImage: "radial-gradient(rgba(0,0,0,0.25) 1px, transparent 1px)", backgroundSize: "24px 24px" };
       case "grid":
-        return { ...baseStyle, backgroundImage: "linear-gradient(#A3A3A3 1px, transparent 1px), linear-gradient(90deg, #A3A3A3 1px, transparent 1px)", backgroundSize: "24px 24px" };
+        return { ...baseStyle, backgroundImage: "linear-gradient(rgba(0,0,0,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.2) 1px, transparent 1px)", backgroundSize: "24px 24px" };
       case "lines":
-        return { ...baseStyle, backgroundImage: "linear-gradient(#A3A3A3 1px, transparent 1px)", backgroundSize: "24px 24px" };
+        return { ...baseStyle, backgroundImage: "linear-gradient(rgba(0,0,0,0.2) 1px, transparent 1px)", backgroundSize: "24px 24px" };
       case "crosses":
-        return { ...baseStyle, backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2v20M2 12h20' stroke='%23A3A3A3' strokeWidth='1'/%3E%3C/svg%3E\")", backgroundSize: "24px 24px" };
+        return { ...baseStyle, backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2v20M2 12h20' stroke='%23000' stroke-opacity='0.25' strokeWidth='1'/%3E%3C/svg%3E\")", backgroundSize: "24px 24px" };
       default:
-        return { ...baseStyle, backgroundImage: "radial-gradient(#A3A3A3 1px, transparent 1px)", backgroundSize: "24px 24px" };
+        return { ...baseStyle, backgroundImage: "radial-gradient(rgba(0,0,0,0.25) 1px, transparent 1px)", backgroundSize: "24px 24px" };
     }
   };
 
@@ -759,6 +765,9 @@ export function Calendar() {
                   onMonthChange={handleMonthChange}
                   onYearChange={handleYearChange}
                   tasks={tasks.filter(t => !t.completed)}
+                  onTaskClick={(taskId) => {
+                    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: true } : t));
+                  }}
                 />
               </AnimatePresence>
               
@@ -905,9 +914,8 @@ export function Calendar() {
                   e.preventDefault();
                   const formData = new FormData(e.currentTarget);
                   const title = formData.get("title") as string;
-                  const color = formData.get("color") as string;
                   if (!title || !title.trim()) return;
-                  setTasks(prev => [...prev, { id: Math.random().toString(), title: title.trim(), completed: false, date: new Date().toISOString(), color: color || "#FCE996" }]);
+                  setTasks(prev => [...prev, { id: Math.random().toString(), title: title.trim(), completed: false, date: new Date().toISOString(), color: selectedColor }]);
                   e.currentTarget.reset();
                 }}
                 className="flex gap-2 mb-4"
@@ -918,7 +926,6 @@ export function Calendar() {
                   placeholder="Add task..."
                   className="flex-1 bg-[#F5F5F5] border-2 border-black rounded-md px-3 py-2 text-sm font-bold text-black outline-none focus:bg-[#FFFDF9] focus:shadow-[inset_0_0_0_2px_black]"
                 />
-                <input type="hidden" name="color" value="#FCE996" />
                 <button
                   type="submit"
                   className="bg-[#86efac] border-2 border-black rounded-md px-4 py-2 text-sm font-black uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-[1px_1px_0_black] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all"
@@ -932,11 +939,8 @@ export function Calendar() {
                   <button
                     key={color}
                     type="button"
-                    onClick={() => {
-                      const input = document.querySelector('input[name="color"]') as HTMLInputElement;
-                      if (input) input.value = color;
-                    }}
-                    className="w-6 h-6 rounded-full border-2 border-black shadow-[1px_1px_0_black]"
+                    onClick={() => setSelectedColor(color)}
+                    className={`w-6 h-6 rounded-full border-2 border-black shadow-[1px_1px_0_black] transition-all ${selectedColor === color ? 'ring-2 ring-offset-2 ring-black scale-110' : ''}`}
                     style={{ backgroundColor: color }}
                     title="Select color"
                   />
