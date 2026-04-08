@@ -30,6 +30,7 @@ interface PhysicsPageProps {
   onDoubleClickDay?: (date: Date) => void;
   events?: Record<string, { id: string; title: string }[]>;
   dateNotes?: Record<string, string>;
+  rangeNotes?: Record<string, string>;
   onFlipComplete?: (dir: number) => void;
   onIntentChange?: (dir: number) => void;
   isSwipeFlip?: boolean;
@@ -107,6 +108,7 @@ export function PhysicsPage({
   onDoubleClickDay,
   events,
   dateNotes,
+  rangeNotes,
   onFlipComplete,
   onIntentChange,
   isSwipeFlip = false,
@@ -243,6 +245,7 @@ export function PhysicsPage({
             onDoubleClickDay={onDoubleClickDay} 
             events={events}
             dateNotes={dateNotes}
+            rangeNotes={rangeNotes}
             note={note} 
             onNoteChange={onNoteChange}
             onMonthChange={onMonthChange}

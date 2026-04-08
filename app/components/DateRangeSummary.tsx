@@ -1,12 +1,14 @@
 import { motion } from "framer-motion";
+import { StickyNote } from "lucide-react";
 
 interface DateRangeSummaryProps {
   startDate: Date | null;
   endDate: Date | null;
   onClear: () => void;
+  onAddRangeNote?: () => void;
 }
 
-export function DateRangeSummary({ startDate, endDate, onClear }: DateRangeSummaryProps) {
+export function DateRangeSummary({ startDate, endDate, onClear, onAddRangeNote }: DateRangeSummaryProps) {
   if (!startDate || !endDate) return null;
 
   const daysBetween = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -45,12 +47,21 @@ export function DateRangeSummary({ startDate, endDate, onClear }: DateRangeSumma
         </div>
       </div>
 
-      <button
-        onClick={onClear}
-        className="mt-2 w-full py-1 text-[8px] font-black uppercase bg-black text-white border-2 border-black rounded hover:bg-red-500 transition-colors"
-      >
-        Clear
-      </button>
+      <div className="mt-2 flex gap-1">
+        <button
+          onClick={onAddRangeNote}
+          className="flex-1 py-1 text-[8px] font-black uppercase bg-[#C084FC] text-black border-2 border-black rounded shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-[1px_1px_0_black] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all flex items-center justify-center gap-1"
+        >
+          <StickyNote className="w-3 h-3" />
+          Note
+        </button>
+        <button
+          onClick={onClear}
+          className="flex-1 py-1 text-[8px] font-black uppercase bg-black text-white border-2 border-black rounded hover:bg-red-500 transition-colors"
+        >
+          Clear
+        </button>
+      </div>
     </motion.div>
   );
 }

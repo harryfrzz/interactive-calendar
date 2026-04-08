@@ -57,3 +57,17 @@ export function getEventKey(date: Date) {
 export function getNoteKey(date: Date) {
   return `${date.getFullYear()}-${date.getMonth()}`;
 }
+
+export function getRangeNoteKey(startDate: Date, endDate: Date) {
+  const start = normalizeDate(startDate);
+  const end = normalizeDate(endDate);
+  return `${start.getFullYear()}-${start.getMonth()}-${start.getDate()}_${end.getFullYear()}-${end.getMonth()}-${end.getDate()}`;
+}
+
+export function isDateInRange(date: Date, startDate: Date | null, endDate: Date | null) {
+  if (!startDate || !endDate) return false;
+  const d = normalizeDate(date).getTime();
+  const start = normalizeDate(startDate).getTime();
+  const end = normalizeDate(endDate).getTime();
+  return d >= start && d <= end;
+}

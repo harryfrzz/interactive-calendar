@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { StickyNote } from "./StickyNote";
-import { WEEKDAY_LABELS, MONTHS, getImageForMonth, getEventKey, isSameDay, buildMonthGrid } from "../utils/calendarUtils";
+import { WEEKDAY_LABELS, MONTHS, getImageForMonth, getEventKey, isSameDay, buildMonthGrid, isDateInRange, getRangeNoteKey } from "../utils/calendarUtils";
 
 interface Task {
   id: string;
@@ -22,6 +22,7 @@ interface PageContentProps {
   onDoubleClickDay?: (date: Date) => void;
   events?: Record<string, { id: string; title: string }[]>;
   dateNotes?: Record<string, string>;
+  rangeNotes?: Record<string, string>;
   interactive?: boolean;
   note?: string;
   onNoteChange?: (note: string) => void;
@@ -43,6 +44,7 @@ export function PageContent({
   onDoubleClickDay,
   events,
   dateNotes,
+  rangeNotes,
   interactive = true,
   note,
   onNoteChange,
@@ -228,6 +230,20 @@ export function PageContent({
             const hasEvents = dayEvents.length > 0;
             const dayNote = dateNotes?.[getEventKey(dateObj)] || "";
             const hasNote = dayNote.length > 0;
+            
+            let hasRangeNote = false;
+            if (rangeNotes) {
+              for (const [key] of Object.entries(rangeNotes)) {
+                const [start, end] = key.split('_').map(s => {
+                  const [y, m, d] = s.split('-').map(Number);
+                  return new Date(y, m, d);
+                });
+                if (isDateInRange(dateObj, start, end)) {
+                  hasRangeNote = true;
+                  break;
+                }
+              }
+            }
 
             let buttonClass = "aspect-square h-11 w-11 flex flex-col items-center justify-center text-[12px] font-bold transition-all duration-100 relative z-10 w-11";
             const wrapClass = "relative flex items-center justify-center";
@@ -288,6 +304,11 @@ export function PageContent({
                   )}
                   {hasNote && (
                     <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#FCE996] border-[1.5px] border-black shadow-[1px_1px_0_black] ${hasEvents ? '-top-0.5 -right-0.5' : ''}`} />
+                  )}
+                  {hasRangeNote && (
+                    <div className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-[#C084FC] border-[1.5px] border-black shadow-[1px_1px_0_black] ${hasNote || hasEvents ? '-bottom-0.5 -right-0.5' : ''}`} 
+                      style={{ transform: 'rotate(45deg)' }} 
+                    />
                   )}
                 </button>
               </div>

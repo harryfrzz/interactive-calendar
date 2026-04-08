@@ -13,7 +13,7 @@ import { TaskButton } from "./TaskButton";
 import { PatternSelector } from "./PatternSelector"; 
 import { PageContent } from "./PageContent";
 import { PhysicsPage } from "./PhysicsPage";
-import { normalizeDate, addMonths, getEventKey, getNoteKey } from "../utils/calendarUtils";
+import { normalizeDate, addMonths, getEventKey, getNoteKey, getRangeNoteKey, isDateInRange } from "../utils/calendarUtils";
 
 export function Calendar() {
   const today = useMemo(() => normalizeDate(new Date()), []);
@@ -29,14 +29,47 @@ export function Calendar() {
   const [notePositions, setNotePositions] = useState<Record<string, { x: number; y: number }>>({});
   const [events, setEvents] = useState<Record<string, { id: string; title: string }[]>>({});
   const [dateNotes, setDateNotes] = useState<Record<string, string>>({});
+  const [rangeNotes, setRangeNotes] = useState<Record<string, string>>({});
   const [eventModalDate, setEventModalDate] = useState<Date | null>(null);
   const [isNoteDragging, setIsNoteDragging] = useState(false);
   const [backgroundPattern, setBackgroundPattern] = useState("dots");
   const [tasks, setTasks] = useState<{ id: string; title: string; completed: boolean; date: string; color: string }[]>([]);
   const [showTasks, setShowTasks] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const [activeTab, setActiveTab] = useState<"events" | "note">("events");
+  const [activeTab, setActiveTab] = useState<"events" | "note" | "rangeNote">("events");
+  const [showRangeNoteModal, setShowRangeNoteModal] = useState(false);
+
+  const hasValidRange = startDate && endDate && startDate.getTime() !== endDate.getTime();
+  const showRangeTab = hasValidRange && eventModalDate && isDateInRange(eventModalDate, startDate, endDate);
+  const modalActiveTab = showRangeTab ? "rangeNote" : activeTab;
   const [selectedColor, setSelectedColor] = useState("#FCE996");
+
+  const getRangeNoteForDate = (date: Date) => {
+    if (!rangeNotes || Object.keys(rangeNotes).length === 0) return null;
+    
+    for (const [key, note] of Object.entries(rangeNotes)) {
+      if (!note || note.length === 0) continue;
+      
+      const [startStr, endStr] = key.split('_');
+      if (!startStr || !endStr) continue;
+      
+      const [startY, startM, startD] = startStr.split('-').map(Number);
+      const [endY, endM, endD] = endStr.split('-').map(Number);
+      
+      const start = new Date(startY, startM, startD);
+      const end = new Date(endY, endM, endD);
+      
+      if (isDateInRange(date, start, end)) {
+        return {
+          key,
+          label: `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+        };
+      }
+    }
+    return null;
+  };
+
+  const rangeNoteForDate = eventModalDate ? getRangeNoteForDate(eventModalDate) : null;
 
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -52,6 +85,9 @@ export function Calendar() {
     
     const savedDateNotes = localStorage.getItem("calendar-date-notes");
     if (savedDateNotes) setDateNotes(JSON.parse(savedDateNotes));
+    
+    const savedRangeNotes = localStorage.getItem("calendar-range-notes");
+    if (savedRangeNotes) setRangeNotes(JSON.parse(savedRangeNotes));
     
     setIsLoaded(true);
   }, []);
@@ -79,6 +115,12 @@ export function Calendar() {
       localStorage.setItem("calendar-date-notes", JSON.stringify(dateNotes));
     }
   }, [dateNotes, isLoaded]);
+
+  React.useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem("calendar-range-notes", JSON.stringify(rangeNotes));
+    }
+  }, [rangeNotes, isLoaded]);
 
   React.useEffect(() => {
     const savedTasks = localStorage.getItem("calendar-tasks");
@@ -207,6 +249,7 @@ export function Calendar() {
                       onYearChange={handleYearChange}
                       tasks={tasks.filter(t => !t.completed)}
                       dateNotes={dateNotes}
+                      rangeNotes={rangeNotes}
                     />
                     <motion.div 
                       className="absolute inset-0 bg-black pointer-events-none z-10" 
@@ -252,6 +295,7 @@ export function Calendar() {
                     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: true } : t));
                   }}
                   dateNotes={dateNotes}
+                  rangeNotes={rangeNotes}
                 />
               </AnimatePresence>
               
@@ -259,6 +303,7 @@ export function Calendar() {
                 startDate={startDate} 
                 endDate={endDate}
                 onClear={() => { setStartDate(null); setEndDate(null); }}
+                onAddRangeNote={() => setShowRangeNoteModal(true)}
               />
             </div>
           </div>
@@ -311,83 +356,14 @@ export function Calendar() {
                 {eventModalDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
               </h3>
               
-              <div className="flex gap-2 mb-4">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("events")}
-                  className={`flex-1 py-2 px-3 text-xs font-black uppercase rounded-md border-2 border-black transition-all ${activeTab === "events" ? "bg-black text-white" : "bg-white text-black hover:bg-gray-100"}`}
-                >
-                  Events
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("note")}
-                  className={`flex-1 py-2 px-3 text-xs font-black uppercase rounded-md border-2 border-black transition-all ${activeTab === "note" ? "bg-black text-white" : "bg-white text-black hover:bg-gray-100"}`}
-                >
-                  Note
-                </button>
-              </div>
-              
-              {activeTab === "events" && (
-                <>
-                  <div className="flex flex-col gap-3 mb-4 flex-1 min-h-[100px] max-h-[200px] overflow-y-auto pr-2">
-                    {!(events[getEventKey(eventModalDate)]?.length) && (
-                      <p className="text-sm font-bold text-gray-400 italic">No events.</p>
-                    )}
-                    {events[getEventKey(eventModalDate)]?.map((ev) => (
-                      <div key={ev.id} className="flex items-center justify-between p-3 bg-[#EAE5D9] border-2 border-black rounded-lg shadow-[2px_2px_0_black]">
-                        <span className="font-bold text-sm text-black break-words flex-1 pr-2">{ev.title}</span>
-                        <button
-                          onClick={() => setEvents(prev => ({
-                            ...prev,
-                            [getEventKey(eventModalDate)]: prev[getEventKey(eventModalDate)].filter(e => e.id !== ev.id)
-                          }))}
-                          className="text-red-500 hover:text-red-700 font-black text-xl leading-none"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <form 
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const formData = new FormData(e.currentTarget);
-                      const title = formData.get("title") as string;
-                      if (!title || !title.trim()) return;
-                      const key = getEventKey(eventModalDate);
-                      setEvents(prev => ({
-                        ...prev,
-                        [key]: [...(prev[key] || []), { id: Math.random().toString(), title: title.trim() }]
-                      }));
-                      e.currentTarget.reset();
-                    }}
-                    className="flex gap-2"
-                  >
-                    <input
-                      name="title"
-                      autoFocus
-                      placeholder="New Event..."
-                      className="flex-1 bg-[#F5F5F5] border-2 border-black rounded-md px-3 py-2 text-sm font-bold text-black outline-none focus:bg-[#FFFDF9] focus:shadow-[inset_0_0_0_2px_black]"
-                    />
-                    <button
-                      type="submit"
-                      className="bg-[#FF9B9B] border-2 border-black rounded-md px-4 py-2 text-sm font-black uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-[1px_1px_0_black] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all"
-                    >
-                      Add
-                    </button>
-                  </form>
-                </>
-              )}
-              
-              {activeTab === "note" && (
-                <>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="text-xs font-black uppercase text-black/60 mb-1 block">Day Note</label>
                   <textarea
                     value={dateNotes[getEventKey(eventModalDate)] || ""}
                     onChange={(e) => setDateNotes(prev => ({ ...prev, [getEventKey(eventModalDate)]: e.target.value }))}
-                    placeholder="Add a note for this date..."
-                    className="w-full h-32 bg-[#F5F5F5] border-2 border-black rounded-md px-3 py-2 text-sm font-bold text-black outline-none focus:bg-[#FFFDF9] focus:shadow-[inset_0_0_0_2px_black] resize-none"
+                    placeholder="Add a note for this specific date..."
+                    className="w-full h-20 bg-[#F5F5F5] border-2 border-black rounded-md px-3 py-2 text-sm font-bold text-black outline-none focus:bg-[#FFFDF9] focus:shadow-[inset_0_0_0_2px_black] resize-none"
                   />
                   {(dateNotes[getEventKey(eventModalDate)] || "").length > 0 && (
                     <button
@@ -397,12 +373,95 @@ export function Calendar() {
                         delete newNotes[getEventKey(eventModalDate)];
                         return newNotes;
                       })}
-                      className="mt-2 text-xs font-bold text-red-500 hover:text-red-700"
+                      className="mt-1 text-xs font-bold text-red-500 hover:text-red-700"
                     >
-                      Clear Note
+                      Clear Day Note
                     </button>
                   )}
-                </>
+                </div>
+
+                <div>
+                  <label className="text-xs font-black uppercase text-[#C084FC] mb-1 block">Range Note</label>
+                  {rangeNoteForDate ? (
+                    <div className="bg-[#C084FC]/20 border-2 border-[#C084FC] rounded-md p-3">
+                      <p className="text-xs font-bold text-black mb-2">
+                        {rangeNoteForDate.label}
+                      </p>
+                      <textarea
+                        value={rangeNotes[rangeNoteForDate.key] || ""}
+                        onChange={(e) => setRangeNotes(prev => ({ ...prev, [rangeNoteForDate!.key]: e.target.value }))}
+                        placeholder="Add a note for this date range..."
+                        className="w-full h-20 bg-white border-2 border-black rounded-md px-3 py-2 text-sm font-bold text-black outline-none focus:shadow-[inset_0_0_0_2px_black] resize-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setRangeNotes(prev => {
+                          const newNotes = { ...prev };
+                          delete newNotes[rangeNoteForDate.key];
+                          return newNotes;
+                        })}
+                        className="mt-1 text-xs font-bold text-red-500 hover:text-red-700"
+                      >
+                        Clear Range Note
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-xs font-bold text-black/40 italic">No range note for this date.</p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showRangeNoteModal && startDate && endDate && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+            onClick={() => setShowRangeNoteModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-white text-black border-[3px] border-black rounded-[15px_5px_10px_20px] shadow-[8px_8px_0_black] p-6 relative flex flex-col"
+            >
+              <button
+                onClick={() => setShowRangeNoteModal(false)}
+                className="absolute top-4 right-4 text-black hover:scale-110 active:scale-95 transition-transform"
+              >
+                <X className="w-6 h-6 stroke-[3]" />
+              </button>
+              <h3 className="text-lg font-black uppercase tracking-tight mb-2">
+                Range Note
+              </h3>
+              <p className="text-xs font-bold text-black/60 mb-4">
+                {startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - {endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </p>
+              
+              <textarea
+                value={rangeNotes[getRangeNoteKey(startDate, endDate)] || ""}
+                onChange={(e) => setRangeNotes(prev => ({ ...prev, [getRangeNoteKey(startDate, endDate)]: e.target.value }))}
+                placeholder="Add a note for this date range..."
+                className="w-full h-32 bg-[#F5F5F5] border-2 border-black rounded-md px-3 py-2 text-sm font-bold text-black outline-none focus:bg-[#FFFDF9] focus:shadow-[inset_0_0_0_2px_black] resize-none"
+              />
+              {(rangeNotes[getRangeNoteKey(startDate, endDate)] || "").length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setRangeNotes(prev => {
+                    const newNotes = { ...prev };
+                    delete newNotes[getRangeNoteKey(startDate, endDate)];
+                    return newNotes;
+                  })}
+                  className="mt-2 text-xs font-bold text-red-500 hover:text-red-700"
+                >
+                  Clear Range Note
+                </button>
               )}
             </motion.div>
           </motion.div>
