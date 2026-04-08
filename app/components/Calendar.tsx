@@ -12,7 +12,7 @@ import {
   MotionValue,
   useMotionValueEvent
 } from "framer-motion";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MoveUpRight, Settings, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MoveUpRight, X } from "lucide-react";
 import { StickyNote } from "./StickyNote";
 import { WeatherOverlay } from "./weather/WeatherOverlay";
 
@@ -43,7 +43,12 @@ function buildMonthGrid(year: number, month: number) {
   return slots;
 }
 
-const HERO_IMAGES: string[] = [];
+const HERO_IMAGES: string[] = [
+  "/image-1.png",
+  "/image-2.png",
+  "/image-3.png",
+  "/image-4.png"
+];
 
 function getImageForMonth(monthIndex: number) {
   if (HERO_IMAGES.length === 0) return "";
@@ -136,23 +141,23 @@ function PageContent({ pageDate, today, startDate, endDate, onSelectDay, onDoubl
 
             let buttonClass = "aspect-square flex flex-col items-center justify-center text-[13px] font-bold transition-all duration-100 relative z-10 w-11";
             const wrapClass = "relative flex items-center justify-center";
-            let connectBg = null;
+            let connectBg: string | null = null;
 
             if (interactive) buttonClass += " hover:-translate-y-0.5 hover:shadow-[2px_2px_0_black] hover:bg-[#FFE690] hover:border-2 hover:border-black rounded-[50%_40%_60%_40%] cursor-pointer";
 
             if (isStart && startDate && endDate && startDate.getTime() !== endDate.getTime()) {
-              connectBg = "absolute right-0 w-1/2 h-full bg-[#E5E0D8] border-y-2 border-black -z-10";
+              connectBg = "absolute right-[-4px] w-[calc(50%+4px)] h-[56%] top-[22%] bg-black -z-10";
             } else if (isEnd && startDate && endDate && startDate.getTime() !== endDate.getTime()) {
-              connectBg = "absolute left-0 w-1/2 h-full bg-[#E5E0D8] border-y-2 border-black -z-10";
+              connectBg = "absolute left-[-4px] w-[calc(50%+4px)] h-[56%] top-[22%] bg-black -z-10";
             } else if (isBetween) {
-              connectBg = "absolute inset-0 w-full h-full bg-[#E5E0D8] border-y-2 border-black -z-10";
+              connectBg = "absolute left-[-4px] right-[-4px] w-[calc(100%+8px)] h-[56%] top-[22%] bg-black -z-10";
             }
 
             if (isStart || isEnd) {
-              buttonClass += " bg-[#FF9B9B] text-black border-2 border-black shadow-[3px_3px_0_black] scale-[1.1] rounded-[255px_15px_225px_15px/15px_225px_15px_255px]";
-              if (interactive) buttonClass += " active:shadow-none active:translate-y-[3px] active:translate-x-[3px]";
+              buttonClass += " !bg-white text-black !border-[3px] !border-black shadow-[3px_3px_0_black] !rounded-full scale-[1.1] z-20 hover:scale-[1.15] hover:!border-[3px]";
+              if (interactive) buttonClass += " active:shadow-[1px_1px_0_black] active:translate-y-[2px] active:translate-x-[2px]";
             } else if (isBetween) {
-              buttonClass += " text-black bg-transparent font-black";
+              buttonClass += " text-white font-black z-20 !bg-transparent hover:!border-[3px] hover:!border-black !shadow-none !rounded-none";
             } else {
               buttonClass += " text-black/70";
             }
@@ -471,10 +476,6 @@ export function Calendar() {
       {/* Soft environmental lighting / Manga background dots */}
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle,#A3A3A3_1px,transparent_1px)] opacity-10 pointer-events-none" style={{ backgroundSize: "24px 24px" }} />
 
-      <button className="absolute top-6 right-6 p-3 rounded-[30%_70%_50%_50%] bg-white border-[3px] border-black text-black shadow-[4px_4px_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-1 active:translate-x-1 active:shadow-[1px_1px_0_black] transition-all z-50">
-        <Settings className="w-6 h-6" />
-      </button>
-
       <div className="relative w-full max-w-[500px] mx-auto flex flex-col items-center">
         
         {/* The Wall Nail & Lanyard */}
@@ -496,8 +497,8 @@ export function Calendar() {
           </svg>
         </div>
 
-        <div className="flex w-full items-center justify-end mb-8 px-2 z-50">
-          <div className="flex gap-3">
+        <div className="flex w-full items-center justify-between mb-4 sm:mb-8 px-2 z-50">
+          <div className="flex gap-3 ml-auto">
             <button
               onClick={() => changeMonth(-1, false)}
               className="p-3 rounded-[40%_60%_70%_30%] bg-white border-[3px] border-black text-black shadow-[4px_4px_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_black] active:translate-y-1 active:translate-x-1 active:shadow-[1px_1px_0_black] transition-all"
