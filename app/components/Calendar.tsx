@@ -171,6 +171,21 @@ export function Calendar() {
         </div>
 
         <div className="w-full">
+          <div className="flex md:hidden items-center justify-between w-full mb-4 px-2">
+            <button
+              onClick={() => changeMonth(-1)}
+              className="p-2 bg-white border-[2px] border-black rounded-lg shadow-[2px_2px_0_black] hover:-translate-y-0.5 hover:shadow-[3px_3px_0_black] active:translate-y-0.5 active:shadow-[1px_1px_0_black] transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => changeMonth(1)}
+              className="p-2 bg-white border-[2px] border-black rounded-lg shadow-[2px_2px_0_black] hover:-translate-y-0.5 hover:shadow-[3px_3px_0_black] active:translate-y-0.5 active:shadow-[1px_1px_0_black] transition-all"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
           <div className="relative w-full h-[580px] sm:h-[680px] overflow-visible" style={{ perspective: "2500px" }}>
               <div className="isolate absolute inset-0 w-full h-full bg-[#EAE5D9] border-[3px] border-black shadow-[0_0_0_black] z-0 pointer-events-none overflow-visible" style={{ borderRadius: "10px 20px 15px 15px / 15px 20px 10px 10px" }}>
                 <AnimatePresence mode="popLayout" initial={false}>

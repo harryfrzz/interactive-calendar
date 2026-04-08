@@ -60,7 +60,7 @@ export function StickyNote({
   return (
     <>
       <motion.div
-        className="absolute bottom-2 -right-2 sm:-bottom-20 sm:-right-3 w-32 h-36 sm:w-40 sm:h-44 z-50 pointer-events-auto"
+        className="absolute -bottom-15 -right-2 sm:-bottom-20 sm:-right-3 w-32 h-36 sm:w-40 sm:h-44 z-50 pointer-events-auto"
         style={{ x, y }}
         drag={interactive && !isExpanded}
         dragControls={dragControls}
