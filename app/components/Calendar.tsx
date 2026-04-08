@@ -14,7 +14,8 @@ import {
 } from "framer-motion";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MoveUpRight, X } from "lucide-react";
 import { StickyNote } from "./StickyNote";
-import { WeatherOverlay } from "./weather/WeatherOverlay";
+import { DateRangeSummary } from "./DateRangeSummary";
+// import { WeatherOverlay } from "./weather/WeatherOverlay";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -47,7 +48,15 @@ const HERO_IMAGES: string[] = [
   "/image-1.png",
   "/image-2.png",
   "/image-3.png",
-  "/image-4.png"
+  "/image-4.png",
+  "/image-5.png",
+  "/image-6.png",
+  "/image-7.png",
+  "/image-8.png",
+  "/image-9.png",
+  "/image-10.png",
+  "/image-11.png",
+  "/image-12.png"
 ];
 
 function getImageForMonth(monthIndex: number) {
@@ -77,7 +86,7 @@ function PageContent({ pageDate, today, startDate, endDate, onSelectDay, onDoubl
   const monthName = pageDate.toLocaleDateString("en-US", { month: "long" });
 
   return (
-    <div className="w-full h-full flex flex-col pointer-events-none relative">
+    <div className="w-full h-full flex flex-col pointer-events-none relative" style={{ borderRadius: "inherit" }}>
       {/* Realistic Wire-O Binding (Front) - Holes Only */}
       <div className="absolute top-0 left-0 w-full flex justify-evenly px-10 z-[60] pointer-events-none">
         {Array.from({ length: 7 }).map((_, i) => (
@@ -90,27 +99,29 @@ function PageContent({ pageDate, today, startDate, endDate, onSelectDay, onDoubl
         ))}
       </div>
 
-      <StickyNote note={note} onNoteChange={onNoteChange} interactive={interactive} />
+      <StickyNote 
+        note={note} 
+        onNoteChange={onNoteChange} 
+        interactive={interactive} 
+        pageKey={pageDate.toISOString()} 
+      />
 
       <div className="h-48 sm:h-65 w-full relative shrink-0 bg-[#FF9B9B] border-b-2 border-black flex items-center justify-center overflow-hidden">
-        {/* Halftone/manga dot pattern overlay */}
-        <div className="absolute inset-0 opacity-20 mix-blend-overlay bg-[radial-gradient(circle,black_1px,transparent_1px)] z-10 pointer-events-none" style={{ backgroundSize: "8px 8px" }} />
-        
         {/* Hero Image */}
         {getImageForMonth(pageDate.getMonth()) && (
           <img 
             src={getImageForMonth(pageDate.getMonth())} 
             alt={monthName}
-            className="absolute inset-0 w-full h-full object-cover filter contrast-[1.1] saturate-[1.2]"
+            className="absolute inset-0 w-full h-full object-cover brightness-85"
             draggable={false}
           />
         )}
         <div className="absolute inset-0 bg-[#FF9B9B]/20 mix-blend-color z-[5]" /> {/* Subtle tint */}
 
-        {/* Dynamic Weather Overlay */}
-        <div className="absolute inset-0 z-20 pointer-events-none">
+        {/* Dynamic Weather Overlay (temporarily removed) */}
+        {/* <div className="absolute inset-0 z-20 pointer-events-none">
           <WeatherOverlay month={pageDate.getMonth()} />
-        </div>
+        </div> */}
 
         <div className="absolute bottom-6 left-8 text-black drop-shadow-[2px_2px_0_white] z-30">
           <h2 className="text-4xl sm:text-5xl font-black uppercase tracking-tight mb-1">{monthName}</h2>
@@ -139,7 +150,7 @@ function PageContent({ pageDate, today, startDate, endDate, onSelectDay, onDoubl
             const dayEvents = events?.[getEventKey(dateObj)] || [];
             const hasEvents = dayEvents.length > 0;
 
-            let buttonClass = "aspect-square flex flex-col items-center justify-center text-[13px] font-bold transition-all duration-100 relative z-10 w-11";
+            let buttonClass = "aspect-square h-11 w-11 flex flex-col items-center justify-center text-[13px] font-bold transition-all duration-100 relative z-10 w-11";
             const wrapClass = "relative flex items-center justify-center";
             let connectBg: string | null = null;
 
@@ -153,8 +164,14 @@ function PageContent({ pageDate, today, startDate, endDate, onSelectDay, onDoubl
               connectBg = "absolute left-[-4px] right-[-4px] w-[calc(100%+8px)] h-[56%] top-[22%] bg-black -z-10";
             }
 
-            if (isStart || isEnd) {
+            if (isStart && isEnd) {
               buttonClass += " !bg-white text-black !border-[3px] !border-black shadow-[3px_3px_0_black] !rounded-full scale-[1.1] z-20 hover:scale-[1.15] hover:!border-[3px]";
+              if (interactive) buttonClass += " active:shadow-[1px_1px_0_black] active:translate-y-[2px] active:translate-x-[2px]";
+            } else if (isStart) {
+              buttonClass += " !bg-[#FF9B9B] text-black !border-[3px] !border-black shadow-[3px_3px_0_black] !rounded-full scale-[1.1] z-20 hover:scale-[1.15] hover:!border-[3px]";
+              if (interactive) buttonClass += " active:shadow-[1px_1px_0_black] active:translate-y-[2px] active:translate-x-[2px]";
+            } else if (isEnd) {
+              buttonClass += " !bg-[#C084FC] text-black !border-[3px] !border-black shadow-[3px_3px_0_black] !rounded-full scale-[1.1] z-20 hover:scale-[1.15] hover:!border-[3px]";
               if (interactive) buttonClass += " active:shadow-[1px_1px_0_black] active:translate-y-[2px] active:translate-x-[2px]";
             } else if (isBetween) {
               buttonClass += " text-white font-black z-20 !bg-transparent hover:!border-[3px] hover:!border-black !shadow-none !rounded-none";
@@ -179,15 +196,13 @@ function PageContent({ pageDate, today, startDate, endDate, onSelectDay, onDoubl
                 >
                   <span className="leading-none">{day}</span>
                   {hasEvents && (
-                    <div className="flex flex-col items-center w-full px-0.5 mt-0.5 pointer-events-none">
-                      <span className="text-[8px] sm:text-[9px] leading-tight truncate w-full text-center font-bold bg-blue-200 border border-black/50 rounded-sm px-0.5">
-                        {dayEvents[0].title}
-                      </span>
-                      {dayEvents.length > 1 && (
-                        <div className="flex gap-0.5 mt-0.5">
-                          {dayEvents.slice(1, 4).map((e, i) => (
-                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-blue-500 border border-black/20" />
-                          ))}
+                    <div className="flex gap-1 mt-1 pointer-events-none items-center justify-center">
+                      {dayEvents.slice(0, 2).map((e, i) => (
+                        <div key={i} className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] border-[1.5px] border-black shadow-[1px_1px_0_black]" />
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <div className="h-3 min-w-[12px] px-0.5 rounded-full bg-white border-[1.5px] border-black shadow-[1px_1px_0_black] flex items-center justify-center">
+                          <span className="text-[8px] font-black leading-none text-black mt-[1px]">+{dayEvents.length - 2}</span>
                         </div>
                       )}
                     </div>
@@ -431,9 +446,34 @@ export function Calendar() {
   const [intendedDir, setIntendedDir] = useState(1); // Drives what shows underneath while dragging
 
   const [notes, setNotes] = useState<Record<string, string>>({});
-
   const [events, setEvents] = useState<Record<string, { id: string; title: string }[]>>({});
   const [eventModalDate, setEventModalDate] = useState<Date | null>(null);
+
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load from localStorage on mount
+  React.useEffect(() => {
+    const savedNotes = localStorage.getItem("calendar-notes");
+    if (savedNotes) setNotes(JSON.parse(savedNotes));
+    
+    const savedEvents = localStorage.getItem("calendar-events");
+    if (savedEvents) setEvents(JSON.parse(savedEvents));
+    
+    setIsLoaded(true);
+  }, []);
+
+  // Save to localStorage when changed
+  React.useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem("calendar-notes", JSON.stringify(notes));
+    }
+  }, [notes, isLoaded]);
+
+  React.useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem("calendar-events", JSON.stringify(events));
+    }
+  }, [events, isLoaded]);
 
   const getNoteKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}`;
 
@@ -569,6 +609,12 @@ export function Calendar() {
           </AnimatePresence>
           
         </div>
+
+        <DateRangeSummary 
+          startDate={startDate} 
+          endDate={endDate}
+          onClear={() => { setStartDate(null); setEndDate(null); }}
+        />
       </div>
 
       {/* Event Modal */}
@@ -586,7 +632,7 @@ export function Calendar() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm bg-white border-[3px] border-black rounded-[15px_5px_10px_20px] shadow-[8px_8px_0_black] p-6 relative flex flex-col"
+              className="w-full max-w-sm bg-white text-black border-[3px] border-black rounded-[15px_5px_10px_20px] shadow-[8px_8px_0_black] p-6 relative flex flex-col"
             >
               <button
                 onClick={() => setEventModalDate(null)}
@@ -604,7 +650,7 @@ export function Calendar() {
                 )}
                 {events[getEventKey(eventModalDate)]?.map((ev, i) => (
                   <div key={ev.id} className="flex items-center justify-between p-3 bg-[#EAE5D9] border-2 border-black rounded-lg shadow-[2px_2px_0_black]">
-                    <span className="font-bold text-sm">{ev.title}</span>
+                    <span className="font-bold text-sm text-black break-words flex-1 pr-2">{ev.title}</span>
                     <button
                       onClick={() => setEvents(prev => ({
                         ...prev,
@@ -621,15 +667,15 @@ export function Calendar() {
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
-                  const form = e.target as HTMLFormElement;
-                  const input = form.elements.namedItem("title") as HTMLInputElement;
-                  if (!input.value.trim()) return;
+                  const formData = new FormData(e.currentTarget);
+                  const title = formData.get("title") as string;
+                  if (!title || !title.trim()) return;
                   const key = getEventKey(eventModalDate);
                   setEvents(prev => ({
                     ...prev,
-                    [key]: [...(prev[key] || []), { id: Math.random().toString(), title: input.value.trim() }]
+                    [key]: [...(prev[key] || []), { id: Math.random().toString(), title: title.trim() }]
                   }));
-                  input.value = "";
+                  e.currentTarget.reset();
                 }}
                 className="flex gap-2"
               >
@@ -637,7 +683,7 @@ export function Calendar() {
                   name="title"
                   autoFocus
                   placeholder="New Event..."
-                  className="flex-1 bg-[#F5F5F5] border-2 border-black rounded-md px-3 py-2 text-sm font-bold outline-none focus:bg-[#FFFDF9] focus:shadow-[inset_0_0_0_2px_black]"
+                  className="flex-1 bg-[#F5F5F5] border-2 border-black rounded-md px-3 py-2 text-sm font-bold text-black outline-none focus:bg-[#FFFDF9] focus:shadow-[inset_0_0_0_2px_black]"
                 />
                 <button
                   type="submit"
