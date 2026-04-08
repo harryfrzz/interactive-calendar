@@ -1,7 +1,4 @@
 "use client";
-
-import React from "react";
-
 interface PatternSelectorProps {
   currentPattern: string;
   onPatternChange: (pattern: string) => void;

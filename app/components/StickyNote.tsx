@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, useDragControls } from "framer-motion";
 import { Shadows_Into_Light } from "next/font/google";
 
