@@ -306,7 +306,7 @@ export function PageContent({
                     <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#FCE996] border-[1.5px] border-black shadow-[1px_1px_0_black] ${hasEvents ? '-top-0.5 -right-0.5' : ''}`} />
                   )}
                   {hasRangeNote && (
-                    <div className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-[#C084FC] border-[1.5px] border-black shadow-[1px_1px_0_black] ${hasNote || hasEvents ? '-bottom-0.5 -right-0.5' : ''}`} 
+                    <div className={`absolute -bottom-2.5 -right-1 w-2.5 h-2.5 bg-[#C084FC] border-[1.5px] border-black shadow-[1px_1px_0_black] ${hasNote || hasEvents ? '-bottom-0.5 -right-0.5' : ''}`} 
                       style={{ transform: 'rotate(45deg)' }} 
                     />
                   )}
