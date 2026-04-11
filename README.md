@@ -53,3 +53,5 @@ Clear your browser cache or localStorage to reset all data.
 ## About the Animation
 
 The flip animation uses Framer Motion's `useSpring` hook to create physics-based spring animations. When you drag on the calendar page, it tracks the drag motion and applies spring physics for a realistic, bouncy flip effect.
+
+### Demo video link: https://youtu.be/g60oOha7P6g
